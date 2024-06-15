@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tour Event Search</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .search-box {
+            position: relative;
+        }
+        .search-box input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        .suggestions {
+            position: absolute;
+            border: 1px solid #ddd;
+            border-top: 0;
+            width: 100%;
+            max-height: 200px;
+            overflow-y: auto;
+            background: white;
+            z-index: 1000;
+        }
+        .suggestions div {
+            padding: 10px;
+            cursor: pointer;
+        }
+        .suggestions div:hover {
+            background-color: #f0f0f0;
+        }
+        .events {
+            margin-top: 20px;
+        }
+        .event {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Search Tour Events</h1>
+        <div class="search-box">
+            <input type="text" id="location-input" placeholder="Enter location (City, City, State, or State)">
+            <div class="suggestions" id="suggestions-box"></div>
+        </div>
+        <div class="events" id="events"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const locationInput = document.getElementById('location-input');
+            const suggestionsBox = document.getElementById('suggestions-box');
+            const eventsBox = document.getElementById('events');
+
+            const locations = ['Fort Worth', 'Fort Worth, TX', 'Texas', 'New York', 'New York, NY', 'California', 'Los Angeles', 'Los Angeles, CA'];
+
+            locationInput.addEventListener('input', function() {
+                const query = locationInput.value.toLowerCase();
+                suggestionsBox.innerHTML = '';
+                if (query.length > 0) {
+                    const suggestions = locations.filter(location => location.toLowerCase().includes(query));
+                    suggestions.forEach(suggestion => {
+                        const div = document.createElement('div');
+                        div.textContent = suggestion;
+                        div.addEventListener('click', function() {
+                            locationInput.value = suggestion;
+                            suggestionsBox.innerHTML = '';
+                        });
+                        suggestionsBox.appendChild(div);
+                    });
+                }
+            });
+
+            locationInput.addEventListener('change', function() {
+                const location = locationInput.value;
+                fetch('/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ location: location })
+                })
+                .then(response => response.json())
+                .then(events => {
+                    eventsBox.innerHTML = '';
+                    if (events.length > 0) {
+                        events.forEach(event => {
+                            const eventDiv = document.createElement('div');
+                            eventDiv.classList.add('event');
+                            eventDiv.innerHTML = `
+                                <strong>Month:</strong> ${event.Month}<br>
+                                <strong>Day:</strong> ${event.Day}<br>
+                                <strong>Year:</strong> ${event.Year}<br>
+                                <strong>Comedy Club:</strong> ${event['Comedy Club']}<br>
+                                <strong>Location:</strong> ${event.Location}<br>
+                            `;
+                            eventsBox.appendChild(eventDiv);
+                        });
+                    } else {
+                        eventsBox.innerHTML = '<p>No events found for the specified location.</p>';
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
